@@ -6,9 +6,10 @@ use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use League\Flysystem\Ftp\FtpAdapter;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Psr\Http\Message\StreamInterface;
-use Illuminate\Support\Str;
 use STS\ZipStream\Contracts\FileContract;
 use STS\ZipStream\Exceptions\UnsupportedSourceDiskException;
 use STS\ZipStream\OutputStream;
@@ -76,6 +77,10 @@ abstract class File implements FileContract
                 $disk->path($source),
                 $zipPath
             );
+        }
+
+        if($disk->getAdapter() instanceof FtpAdapter) {
+            return (new FtpFile($source, $zipPath))->setDisk($disk);
         }
 
         throw new UnsupportedSourceDiskException("Unsupported disk type");

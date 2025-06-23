@@ -2,8 +2,10 @@
 
 namespace STS\ZipStream\Tests;
 
+use Illuminate\Support\Facades\Storage;
 use Orchestra\Testbench\TestCase;
 use STS\ZipStream\Models\File;
+use STS\ZipStream\Models\FtpFile;
 use STS\ZipStream\Models\HttpFile;
 use STS\ZipStream\Models\LocalFile;
 use STS\ZipStream\Models\S3File;
@@ -52,6 +54,19 @@ class FileTest extends TestCase
     public function testTempFile()
     {
         $file = new TempFile("hi there", "test.txt");
+
+        $this->assertEquals(8, $file->getFilesize());
+        $this->assertEquals("hi there", $file->getReadableStream()->getContents());
+        $this->assertEquals("test.txt", $file->getZipPath());
+    }
+
+    public function testFtpFile()
+    {
+        $disk = Storage::fake('ftp');
+        $disk->put('test.txt', 'hi there');
+
+        $file = new FtpFile('test.txt', "test.txt");
+        $file->setDisk($disk);
 
         $this->assertEquals(8, $file->getFilesize());
         $this->assertEquals("hi there", $file->getReadableStream()->getContents());
@@ -116,5 +131,20 @@ class FileTest extends TestCase
 
         $this->assertInstanceOf(S3File::class, $file);
         $this->assertEquals('s3://my-test-bucket/my-prefix/test.txt', $file->getSource());
+    }
+
+    public function testFromFtpDisk()
+    {
+        $custom_disk_name = 'custom_ftp_disk';
+
+        config(['filesystems.disks.ftp.driver' => 'ftp']);
+        config(["filesystems.disks.$custom_disk_name.driver" => 'ftp']);
+
+        $file1 = File::makeFromDisk('ftp', 'file1.txt');
+        $file2 = File::makeFromDisk(Storage::disk($custom_disk_name), 'file2.txt');
+
+        $this->assertContainsOnlyInstancesOf(FtpFile::class, [$file1, $file2]);
+        $this->assertEquals('file1.txt', $file1->getSource());
+        $this->assertEquals('file2.txt', $file2->getSource());
     }
 }

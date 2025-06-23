@@ -148,7 +148,28 @@ Zip::create("package.zip")
     ->addFromDisk("s3", "object.pdf", "Something.pdf");
 ```
 
-In this case the S3 client from the storage disk will be used. 
+In this case the S3 client from the storage disk will be used.
+
+## Support for FTP
+
+You can stream files from a FTP server into your zip. For that, you will need to install the `league/flysystem-ftp` package:
+
+```shell
+composer require league/flysystem-ftp
+```
+
+### Add files to your zip
+
+```php
+Zip::create("package.zip")
+    ->addFromDisk('ftp', 'object.pdf', 'Something.pdf');
+
+\\ OR
+
+$disk = Storage::disk('custom_ftp_disk');
+Zip::create("package.zip")
+    ->addFromDisk($disk, 'object.pdf', 'Something.pdf');
+```
 
 ## Specify your own filesizes
 
